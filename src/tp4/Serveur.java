@@ -3,28 +3,47 @@ package tp4;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
-public class Serveur {
-	final static int PORT=1234;
-	private static byte[] buffer = new byte[1024];
+public class Serveur extends Thread{
+
 	public static void main(String[] args) {
+		new Serveur().start();
+		}
+	public void run() {
 		try {
-			DatagramSocket socket = new DatagramSocket(PORT);
-			System.out.println("Démarrage du Server");
-			
+			System.out.println("lancement du Serveur");
+			DatagramSocket serverSocket = new DatagramSocket(124);
 			while(true) {
-				 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-				 socket.receive(packet);
-				 
-				 String username = new String(packet.getData(), 0, packet.getLength());
-				 String message = "Bienvenue " + username;
-				 
-				 DatagramPacket messageTOSend = new DatagramPacket(message.getBytes(), message.length(), packet.getAddress(), packet.getPort());
-				 socket.send(messageTOSend);
+				new ClientProcess(serverSocket).start();
 			}
-			
-		} catch (IOException e) {e.printStackTrace();}			
-}
+			}
+	 catch (IOException e) {e.printStackTrace();}
+			}
+	public class ClientProcess extends Thread {
+		DatagramSocket socket;
+		public ClientProcess(DatagramSocket serverSocket) {
+			super();
+			this.socket = serverSocket;
+			}
+		public void run() {
+			try {
+				byte[] receiveData = new byte[1024];        
+				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+				socket.receive(receivePacket);
+				System.out.println("Client d'adresse :"+receivePacket.getAddress()+" demande la date");
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				String currentTime = dateFormat.format(new Date());
+				byte[] sendData = currentTime.getBytes();
 
+				DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, receivePacket.getAddress(), receivePacket.getPort());
+				socket.send(sendPacket);
+				System.out.println("Envoie terminé pour "+receivePacket.getAddress());
+				}
+			catch (IOException  e) {e.printStackTrace();
+}
+}
+}
 }
